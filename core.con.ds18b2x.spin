@@ -1,3 +1,15 @@
+{
+    --------------------------------------------
+    Filename: core.con.ds18b2x.spin
+    Author: Jesse Burt
+    Description: Low-level constants
+    Copyright (c) 2019
+    Started Jul 13, 2019
+    Updated Jul 13, 2019
+    See end of file for terms of use.
+    --------------------------------------------
+}
+
 CON
 
     CONV_TEMP   = $44

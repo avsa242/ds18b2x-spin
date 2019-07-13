@@ -1,3 +1,15 @@
+{
+    --------------------------------------------
+    Filename: DS18B2x-Demo.spin
+    Author: Jesse Burt
+    Description: Demo of the DS18B2x driver
+    Copyright (c) 2019
+    Started Jul 13, 2019
+    Updated Jul 13, 2019
+    See end of file for terms of use.
+    --------------------------------------------
+}
+
 CON
 
     _clkmode    = cfg#_CLKMODE
@@ -42,8 +54,6 @@ PUB Main | sn_byte, temp
         temp := ds.Temperature
         ser.Position(0, 5)
         ser.Str(string("Temp: "))
-        ser.Dec(temp)
-        ser.Newline
         DispTemp(temp)
     Flash(LED, 100)
 

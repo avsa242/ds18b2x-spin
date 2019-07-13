@@ -1,3 +1,15 @@
+{
+    --------------------------------------------
+    Filename: sensor.temperature.ds18b2x.ow.spin
+    Author: Jesse Burt
+    Description: Driver for the Dallas/Maxim DS18B2x-series temperature sensors
+    Copyright (c) 2019
+    Started Jul 13, 2019
+    Updated Jul 13, 2019
+    See end of file for terms of use.
+    --------------------------------------------
+}
+
 CON
 
     SCALE_C = 0
@@ -27,7 +39,8 @@ PUB Stop
     ow.Stop
 
 PUB Family
-
+' Returns: 8-bit family code of device
+'   $28:    DS18B20
     result := 0
     ow.Reset
     ow.Write(ow#RD_ROM)
@@ -35,7 +48,11 @@ PUB Family
     ow.Reset
 
 PUB Scale(temp_scale)
-
+' Set scale of temperature data returned by Temperature method
+'   Valid values:
+'       SCALE_C (0): Celsius
+'       SCALE_F (1): Fahrenheit
+'   Any other value returns the current setting
     case temp_scale
         SCALE_F, SCALE_C:
             _temp_scale := temp_scale
@@ -43,7 +60,8 @@ PUB Scale(temp_scale)
             return _temp_scale
 
 PUB SN(buff_addr) | tmp
-
+' Read 48-bit serial number of device into buffer at buff_addr
+'   NOTE: Buffer at buff_addr must be 6 bytes in length
     ow.Reset
     ow.Write(ow#RD_ROM)
     ow.Read                                 ' Discard first byte (family code)
@@ -51,11 +69,12 @@ PUB SN(buff_addr) | tmp
         byte[buff_addr][tmp] := ow.Read
  
 PUB Status
-
+' Returns: One-Wire bus status
     return ow.Reset
 
 PUB Temperature
-
+' Returns: Temperature in centi-degrees
+'   NOTE: Temperature scale is set using the Scale method, and defaults to Celsius
     result := 0
     ow.Reset
     ow.Write(ow#SKIP_ROM)
