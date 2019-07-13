@@ -1,23 +1,25 @@
-# PROJECT-NAME 
+# ds18b2x-spin 
 ---------------
 
-This is a P8X32A/Propeller [driver] object for ____.
+This is a P8X32A/Propeller driver object for Dallas/Maxim DS18B2x-series temperature sensors.
 
 ## Salient Features
 
-* Feature 1
-* Feature 2
+* One-wire connection
+* Supports reading device serial number
+* Supports reading temperature
 
 ## Requirements
 
-* Requirement 1
+* 1 extra core/cog for the PASM One-Wire driver
 
 ## Limitations
 
-* Limitation 1
-* Limitation 2
+* More than one device on the bus untested/unsupported
+* Very early in development - may malfunction or outright fail to build
+* Doesn't perform CRC checks on data received
 
 ## TODO
 
-* Task item 1
-* Task item 2
+- [ ] Implement CRC checking
+- [ ] Test multiple devices on bus
