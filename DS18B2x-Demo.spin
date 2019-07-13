@@ -23,12 +23,16 @@ VAR
 PUB Main | i
 
     Setup
-    ser.Newline
+
+    ser.Position(0, 3)
+    ser.Str(string("SN: "))
     ds.SN(@_sn)
     repeat i from 0 to 7
         ser.Hex(_sn[i], 2)
-    ser.Newline
-    ser.Dec(ds.Temperature)
+
+    repeat
+        ser.Position(0, 4)
+        ser.Dec(ds.Temperature)
     Flash(LED, 100)
 
 PUB Setup
