@@ -1,5 +1,6 @@
 CON
 
+
 OBJ
 
     time    : "time"
@@ -23,11 +24,19 @@ PUB Stop
     ow.Stop
 
 
+PUB Family
+
+    ow.Reset
+    ow.Write(ow#RD_ROM)
+    result := ow.Read
+    ow.Reset
+
 PUB SN(buff_addr) | tmp
 
     ow.Reset
     ow.Write(ow#RD_ROM)
-    repeat tmp from 7 to 0
+    ow.Read                                 ' Discard first byte (family code)
+    repeat tmp from 5 to 0                  ' Read only the 48-bit unique SN
         byte[buff_addr][tmp] := ow.Read
  
 PUB Status
