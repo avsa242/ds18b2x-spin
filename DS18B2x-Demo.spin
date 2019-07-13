@@ -21,14 +21,16 @@ OBJ
     ser : "com.serial.terminal.ansi"
     math: "tiny.math.float"
     fs  : "string.float"
+    int : "string.integer"
 
 VAR
 
     byte _ser_cog, _sn[7]
 
-PUB Main | sn_byte
+PUB Main | sn_byte, temp
 
     Setup
+    ds.Scale(ds#SCALE_F)
 
     ser.Position(0, 4)
     ser.Str(string("SN: "))
@@ -37,43 +39,19 @@ PUB Main | sn_byte
         ser.Hex(_sn[sn_byte], 2)
 
     repeat
+        temp := ds.Temperature
         ser.Position(0, 5)
         ser.Str(string("Temp: "))
-        DispTemp
+        ser.Dec(temp)
+        ser.Newline
+        DispTemp(temp)
     Flash(LED, 100)
 
-PUB DispTemp | temp
-{
-    case SCALE
-        C:
-            temp := math.FFloat(ds.Temperature)
-            temp := math.FDiv(temp, 100.0)
-            temp := fs.FloatToString(temp)
-            ser.Str(temp)
-        F:
-            temp := ds.Temperature
-            temp := temp * 9 / 5 + 32_00
-            temp := math.FFloat(temp)
-            temp := math.FDiv(temp, 100.0)
-            temp := fs.FloatToString(temp)
-            ser.Str(temp)}
-  temp := ds.Temperature
-  if (temp > 0)
-    temp := (temp/10) * 9 / 5 + 32_0
-  else
-    temp := 32_0 - (||temp * 9 / 5)
+PUB DispTemp(cent_deg) | temp
 
-  if (temp < 0)
-    ser.Char("-")
-    ||temp
-
-  ser.dec(temp / 10)
-  ser.Char(".")
-  ser.dec(temp // 10)
-  ser.Char(176)
-  ser.Char("F")
-  ser.Chars(32, 5)
-
+    ser.Dec(cent_deg/100)
+    ser.Char(".")
+    ser.Str(int.DecZeroed(cent_deg//100, 2))
 
 PUB Setup
 

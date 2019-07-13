@@ -1,5 +1,7 @@
 CON
 
+    SCALE_C = 0
+    SCALE_F = 1
 
 OBJ
 
@@ -9,6 +11,7 @@ OBJ
 
 VAR
 
+  byte _temp_scale
 
 PUB Start(OW_PIN): okay
 
@@ -23,13 +26,21 @@ PUB Stop
 
     ow.Stop
 
-
 PUB Family
 
+    result := 0
     ow.Reset
     ow.Write(ow#RD_ROM)
     result := ow.Read
     ow.Reset
+
+PUB Scale(temp_scale)
+
+    case temp_scale
+        SCALE_F, SCALE_C:
+            _temp_scale := temp_scale
+        OTHER:
+            return _temp_scale
 
 PUB SN(buff_addr) | tmp
 
@@ -45,6 +56,7 @@ PUB Status
 
 PUB Temperature
 
+    result := 0
     ow.Reset
     ow.Write(ow#SKIP_ROM)
     ow.Write(core#CONV_TEMP)
@@ -58,4 +70,12 @@ PUB Temperature
     result |= ow.Read << 8
     ow.Reset
 
-    return ~~result * 5
+    result := ~~result * 5
+    case _temp_scale
+        SCALE_F:
+            if result > 0
+                result := result * 9 / 5 + 32_00
+            else
+                result := 32_00 - (||result * 9 / 5)
+        OTHER:
+            return result
