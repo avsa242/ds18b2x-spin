@@ -1,5 +1,5 @@
 # ds18b2x-spin 
----------------
+--------------
 
 This is a P8X32A/Propeller driver object for Dallas/Maxim DS18B2x-series temperature sensors.
 
