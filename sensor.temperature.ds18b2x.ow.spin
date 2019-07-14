@@ -40,12 +40,21 @@ PUB Stop
 
 PUB Family
 ' Returns: 8-bit family code of device
-'   $28:    DS18B20
+'   20: DS18B20
+'   22: DS18B22
     result := 0
     ow.Reset
     ow.Write(ow#RD_ROM)
     result := ow.Read
     ow.Reset
+
+    case result
+        core#FAMILY_20:
+            return 20
+        core#FAMILY_22:
+            return 22
+        OTHER:
+            'Unknown or not yet implemented - return the raw data
 
 PUB Scale(temp_scale)
 ' Set scale of temperature data returned by Temperature method

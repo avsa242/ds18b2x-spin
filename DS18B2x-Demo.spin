@@ -70,12 +70,9 @@ PUB Setup
     ser.Clear
     ser.Str(string("Serial terminal started", ser#NL, ser#LF))
     if ds.Start (OW_PIN)
-        ser.Str (string("DS18B2x driver started ("))
-        case ds.Family
-            $28:
-                ser.Str(string("DS18B20 found)"))
-            OTHER:
-                ser.Str(string("UNKNOWN DEVICE found)"))
+        ser.Str (string("DS18B2x driver started (DS18B"))
+        ser.Dec (ds.Family)
+        ser.Str(string(" found)"))
     else
         ser.Str (string("DS18B2x driver failed to start - halting", ser#NL, ser#LF))
         ds.Stop

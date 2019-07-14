@@ -7,7 +7,7 @@ This is a P8X32A/Propeller driver object for Dallas/Maxim DS18B2x-series tempera
 
 * One-wire connection
 * Supports reading device serial number
-* Supports reading temperature
+* Supports reading temperature (Celsius, Fahrenheit)
 
 ## Requirements
 
@@ -22,4 +22,5 @@ This is a P8X32A/Propeller driver object for Dallas/Maxim DS18B2x-series tempera
 ## TODO
 
 - [ ] Implement CRC checking
+- [ ] Implement resolution setting
 - [ ] Test multiple devices on bus
