@@ -43,8 +43,13 @@ PUB Main | sn_byte, temp
 
     Setup
     ds.Scale(ds#SCALE_F)
+    ds.Resolution(9)
 
     ser.Position(0, 4)
+    ser.Str(string("Temp res: "))
+    ser.Dec(ds.Resolution(-2))
+    ser.Str(string("bits", ser#NL, ser#LF))
+
     ser.Str(string("SN: "))
     ds.SN(@_sn)
     repeat sn_byte from 0 to 5
@@ -52,7 +57,7 @@ PUB Main | sn_byte, temp
 
     repeat
         temp := ds.Temperature
-        ser.Position(0, 5)
+        ser.Position(0, 6)
         ser.Str(string("Temp: "))
         DispTemp(temp)
     Flash(LED, 100)

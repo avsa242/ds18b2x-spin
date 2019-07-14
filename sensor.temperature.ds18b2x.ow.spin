@@ -56,6 +56,30 @@ PUB Family
         OTHER:
             'Unknown or not yet implemented - return the raw data
 
+PUB Resolution(bits) | tmp
+' Set resolution of temperature readings, in bits
+'   Valid values: 9..12
+'   Any other value polls the chip and returns the current setting
+    ow.Reset
+    ow.Write(ow#SKIP_ROM)
+    ow.Write(core#RD_SPAD)
+    repeat 4
+        ow.Read
+    tmp := (ow.Read >> 5)
+    case bits
+        9..12:
+            bits := lookdownz(bits: 9..12) << 5
+        OTHER:
+            result := lookupz(tmp: 9..12)
+            return result
+    ow.Reset
+    ow.Write(ow#SKIP_ROM)
+    ow.Write(core#WR_SPAD)
+    ow.Write($00)
+    ow.Write($00)
+    ow.Write(bits)
+    OW.Reset
+
 PUB Scale(temp_scale)
 ' Set scale of temperature data returned by Temperature method
 '   Valid values:
@@ -107,3 +131,4 @@ PUB Temperature
                 result := 32_00 - (||result * 9 / 5)
         OTHER:
             return result
+
