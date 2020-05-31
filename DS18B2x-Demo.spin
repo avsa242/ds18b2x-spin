@@ -3,9 +3,9 @@
     Filename: DS18B2x-Demo.spin
     Author: Jesse Burt
     Description: Demo of the DS18B2x driver
-    Copyright (c) 2019
+    Copyright (c) 2020
     Started Jul 13, 2019
-    Updated Jul 13, 2019
+    Updated May 31, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -15,15 +15,17 @@ CON
     _clkmode    = cfg#_CLKMODE
     _xinfreq    = cfg#_XINFREQ
 
-    LED         = cfg#LED1
-
+' -- User-modifiable constants
+    SER_RX      = 31
+    SER_TX      = 30
     SER_BAUD    = 115_200
-
+    LED         = cfg#LED1
     OW_PIN      = 0
+    SCALE       = F
+' --
 
     C           = 0
     F           = 1
-    SCALE       = F
 
 OBJ
 
@@ -31,23 +33,21 @@ OBJ
     time: "time"
     ds  : "sensor.temperature.ds18b2x.ow"
     ser : "com.serial.terminal.ansi"
-    math: "tiny.math.float"
-    fs  : "string.float"
     int : "string.integer"
 
 VAR
 
-    byte _ser_cog, _sn[8]
+    byte _sn[8]
 
 PUB Main | sn_byte, temp
 
     Setup
     ds.Scale(ds#SCALE_F)
-    ds.Resolution(9)
+    ds.ADCRes(9)
 
     ser.Position(0, 4)
     ser.Str(string("Temp res: "))
-    ser.Dec(ds.Resolution(-2))
+    ser.Dec(ds.ADCRes(-2))
     ser.Str(string("bits", ser#CR, ser#LF))
 
     ser.Str(string("SN: "))
@@ -71,13 +71,13 @@ PUB DispTemp(cent_deg) | temp
 
 PUB Setup
 
-    repeat until _ser_cog := ser.Start (SER_BAUD)
-    time.MSleep(200)
+    repeat until ser.StartRXTX (SER_RX, SER_TX, 0, SER_BAUD)
+    time.MSleep(30)
     ser.Clear
     ser.Str(string("Serial terminal started", ser#CR, ser#LF))
     if ds.Start (OW_PIN)
         ser.Str (string("DS18B2x driver started (DS18B"))
-        ser.Dec (ds.Family)
+        ser.Dec (ds.DeviceID)
         ser.Str(string(" found)"))
     else
         ser.Str (string("DS18B2x driver failed to start - halting", ser#CR, ser#LF))

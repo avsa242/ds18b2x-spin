@@ -3,9 +3,9 @@
     Filename: sensor.temperature.ds18b2x.ow.spin
     Author: Jesse Burt
     Description: Driver for the Dallas/Maxim DS18B2x-series temperature sensors
-    Copyright (c) 2019
+    Copyright (c) 2020
     Started Jul 13, 2019
-    Updated Jul 13, 2019
+    Updated May 31, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -28,35 +28,17 @@ VAR
 PUB Start(OW_PIN): okay
 
     if lookdown(OW_PIN: 0..31)
-        okay := ow.Start(OW_PIN)
-        if okay
+        if okay := ow.Start(OW_PIN)
             if Status == ow#OW_STAT_FOUND
-                return
-    return FALSE
+                if lookdown(DeviceID: 20, 22)
+                    return
+    return FALSE                                            ' If we got here, something went wrong
 
 PUB Stop
 
     ow.Stop
 
-PUB Family
-' Returns: 8-bit family code of device
-'   20: DS18B20
-'   22: DS18B22
-    result := 0
-    ow.Reset
-    ow.Write(ow#RD_ROM)
-    result := ow.Read
-    ow.Reset
-
-    case result
-        core#FAMILY_20:
-            return 20
-        core#FAMILY_22:
-            return 22
-        OTHER:
-            'Unknown or not yet implemented - return the raw data
-
-PUB Resolution(bits) | tmp
+PUB ADCRes(bits) | tmp
 ' Set resolution of temperature readings, in bits
 '   Valid values: 9..12
 '   Any other value polls the chip and returns the current setting
@@ -80,6 +62,24 @@ PUB Resolution(bits) | tmp
     ow.Write(bits)
     OW.Reset
 
+PUB DeviceID
+' Returns: 8-bit family code of device
+'   20: DS18B20
+'   22: DS18B22
+    result := 0
+    ow.Reset
+    ow.Write(ow#RD_ROM)
+    result := ow.Read
+    ow.Reset
+
+    case result
+        core#FAMILY_20:
+            return 20
+        core#FAMILY_22:
+            return 22
+        OTHER:
+            'Unknown or not yet implemented - return the raw data
+
 PUB Scale(temp_scale)
 ' Set scale of temperature data returned by Temperature method
 '   Valid values:
@@ -93,8 +93,8 @@ PUB Scale(temp_scale)
             return _temp_scale
 
 PUB SN(buff_addr) | tmp
-' Read 48-bit serial number of device into buffer at buff_addr
-'   NOTE: Buffer at buff_addr must be 6 bytes in length
+' Read 64-bit serial number of device into buffer at buff_addr
+'   NOTE: Buffer at buff_addr must be 8 bytes in length
     ow.Reset
     ow.Write(ow#RD_ROM)
     ow.Read                                 ' Discard first byte (family code)
