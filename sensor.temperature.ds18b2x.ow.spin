@@ -98,7 +98,7 @@ PUB SN(buff_addr) | tmp
     ow.Reset
     ow.Write(ow#RD_ROM)
     ow.Read                                 ' Discard first byte (family code)
-    repeat tmp from 5 to 0                  ' Read only the 48-bit unique SN
+    repeat tmp from 7 to 0
         byte[buff_addr][tmp] := ow.Read
  
 PUB Status
