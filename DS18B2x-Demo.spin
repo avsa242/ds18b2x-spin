@@ -3,25 +3,24 @@
     Filename: DS18B2x-Demo.spin
     Author: Jesse Burt
     Description: Demo of the DS18B2x driver
-    Copyright (c) 2020
+    Copyright (c) 2021
     Started Jul 13, 2019
-    Updated May 31, 2020
+    Updated Jan 8, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
 
 CON
 
-    _clkmode    = cfg#_CLKMODE
-    _xinfreq    = cfg#_XINFREQ
+    _clkmode    = cfg#_clkmode
+    _xinfreq    = cfg#_xinfreq
 
 ' -- User-modifiable constants
-    SER_RX      = 31
-    SER_TX      = 30
-    SER_BAUD    = 115_200
     LED         = cfg#LED1
-    OW_PIN      = 0
-    SCALE       = F
+    SER_BAUD    = 115_200
+
+    OW_PIN      = 25
+    SCALE       = C
 ' --
 
     C           = 0
@@ -39,59 +38,65 @@ VAR
 
     byte _sn[8]
 
-PUB Main | sn_byte, temp
+PUB Main{} | sn_byte, model, temp
 
-    Setup
-    ds.Scale(ds#SCALE_F)
-    ds.ADCRes(9)
+    setup{}
 
-    ser.Position(0, 4)
-    ser.Str(string("Temp res: "))
-    ser.Dec(ds.ADCRes(-2))
-    ser.Str(string("bits", ser#CR, ser#LF))
+    ds.tempscale(SCALE)
 
-    ser.Str(string("SN: "))
-    ds.SN(@_sn)
+    ser.position(0, 4)
+
+    ds.sn(@_sn)
+    model := ds.deviceid{}
+    ser.printf1(string("DS18B%d, SN "), model)
     repeat sn_byte from 0 to 7
-        ser.Hex(_sn[sn_byte], 2)
+        ser.hex(_sn.byte[sn_byte], 2)
 
     repeat
-        temp := ds.Temperature
-        ser.Position(0, 6)
-        ser.Str(string("Temp: "))
-        DispTemp(temp)
+        temp := ds.temperature{}
+        ser.position(0, 6)
+        ser.str(string("Temp: "))
+        decimal(temp, 100)
 
-    Flash(LED, 100)
+PRI Decimal(scaled, divisor) | whole[4], part[4], places, tmp, sign
+' Display a scaled up number as a decimal
+'   Scale it back down by divisor (e.g., 10, 100, 1000, etc)
+    whole := scaled / divisor
+    tmp := divisor
+    places := 0
+    part := 0
+    sign := 0
+    if scaled < 0
+        sign := "-"
+    else
+        sign := " "
 
-PUB DispTemp(cent_deg) | temp
+    repeat
+        tmp /= 10
+        places++
+    until tmp == 1
+    scaled //= divisor
+    part := int.deczeroed(||(scaled), places)
 
-    ser.Dec(cent_deg/100)
-    ser.Char(".")
-    ser.Str(int.DecZeroed(cent_deg//100, 2))
+    ser.char(sign)
+    ser.dec(||(whole))
+    ser.char(".")
+    ser.str(part)
 
 PUB Setup
 
-    repeat until ser.StartRXTX (SER_RX, SER_TX, 0, SER_BAUD)
-    time.MSleep(30)
-    ser.Clear
-    ser.Str(string("Serial terminal started", ser#CR, ser#LF))
-    if ds.Start (OW_PIN)
-        ser.Str (string("DS18B2x driver started (DS18B"))
-        ser.Dec (ds.DeviceID)
-        ser.Str(string(" found)"))
+    ser.start(SER_BAUD)
+    time.msleep(30)
+    ser.clear{}
+    ser.strln(string("Serial terminal started"))
+    if ds.start(OW_PIN)
+        ser.strln(string("DS18B2x driver started"))
     else
-        ser.Str (string("DS18B2x driver failed to start - halting", ser#CR, ser#LF))
-        ds.Stop
-        time.MSleep (500)
-        ser.Stop
-        Flash(LED, 500)
-
-PUB Flash(pin, delay_ms)
-
-    dira[pin] := 1
-    repeat   
-        !outa[pin]
-        time.MSleep (delay_ms)
+        ser.strln(string("DS18B2x driver failed to start - halting"))
+        ds.stop{}
+        time.msleep(500)
+        ser.stop{}
+        repeat
 
 DAT
 {

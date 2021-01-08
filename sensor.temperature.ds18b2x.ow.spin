@@ -3,134 +3,139 @@
     Filename: sensor.temperature.ds18b2x.ow.spin
     Author: Jesse Burt
     Description: Driver for the Dallas/Maxim DS18B2x-series temperature sensors
-    Copyright (c) 2020
+    Copyright (c) 2021
     Started Jul 13, 2019
-    Updated May 31, 2020
+    Updated Jan 8, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
 
 CON
 
-    SCALE_C = 0
-    SCALE_F = 1
+    C   = 0
+    F   = 1
 
 OBJ
 
-    time    : "time"
     core    : "core.con.ds18b2x"
     ow      : "com.onewire"
 
 VAR
 
-  byte _temp_scale
+    byte _temp_scale
 
 PUB Start(OW_PIN): okay
 
     if lookdown(OW_PIN: 0..31)
-        if okay := ow.Start(OW_PIN)
-            if Status == ow#OW_STAT_FOUND
-                if lookdown(DeviceID: 20, 22)
+        if okay := ow.start(OW_PIN)
+            if status{} == ow#OW_STAT_FOUND
+                if lookdown(deviceid{}: 20, 22)
                     return
-    return FALSE                                            ' If we got here, something went wrong
+    return FALSE                                ' something above failed
 
 PUB Stop
 
-    ow.Stop
+    ow.stop{}
 
-PUB ADCRes(bits) | tmp
+PUB Defaults{}
+' Factory default settings
+    adcres(12)
+    tempscale(C)
+
+PUB ADCRes(bits): curr_res
 ' Set resolution of temperature readings, in bits
 '   Valid values: 9..12
 '   Any other value polls the chip and returns the current setting
-    ow.Reset
-    ow.Write(ow#SKIP_ROM)
-    ow.Write(core#RD_SPAD)
+    ow.reset{}
+    ow.write(ow#SKIP_ROM)
+    ow.write(core#RD_SPAD)
     repeat 4
-        ow.Read
-    tmp := (ow.Read >> 5)
+        ow.read{}
+
     case bits
         9..12:
             bits := lookdownz(bits: 9..12) << 5
-        OTHER:
-            result := lookupz(tmp: 9..12)
-            return result
-    ow.Reset
-    ow.Write(ow#SKIP_ROM)
-    ow.Write(core#WR_SPAD)
-    ow.Write($00)
-    ow.Write($00)
-    ow.Write(bits)
-    OW.Reset
+        other:
+            curr_res := (ow.read{} >> 5)
+            return lookupz(curr_res: 9..12)
 
-PUB DeviceID
+    ow.reset{}
+    ow.write(ow#SKIP_ROM)
+    ow.write(core#WR_SPAD)
+    ow.write($00)
+    ow.write($00)
+    ow.write(bits)
+    ow.reset{}
+
+PUB DeviceID{}: id
 ' Returns: 8-bit family code of device
-'   20: DS18B20
-'   22: DS18B22
-    result := 0
-    ow.Reset
-    ow.Write(ow#RD_ROM)
-    result := ow.Read
-    ow.Reset
+'   Known values:
+'       20: DS18B20
+'       22: DS18B22
+    id := 0
+    ow.reset{}
+    ow.write(ow#RD_ROM)
+    id := ow.read{}
+    ow.reset{}
 
-    case result
+    case id
         core#FAMILY_20:
             return 20
         core#FAMILY_22:
             return 22
-        OTHER:
-            'Unknown or not yet implemented - return the raw data
+        other:
+            return id
 
-PUB Scale(temp_scale)
-' Set scale of temperature data returned by Temperature method
+PUB SN(ptr_buff) | tmp
+' Read 64-bit serial number of device into buffer at ptr_buff
+'   NOTE: Buffer at ptr_buff must be 8 bytes in length
+    ow.reset{}
+    ow.write(ow#RD_ROM)
+    ow.read{}                                     ' dummy read (family code)
+    repeat tmp from 7 to 0
+        byte[ptr_buff][tmp] := ow.read{}
+ 
+PUB Status{}: curr_stat
+' Returns: One-Wire bus status
+    return ow.reset{}
+
+PUB Temperature{}: temp
+' Returns: Temperature in hundredths of a degree
+    temp := 0
+    ow.reset{}
+    ow.write(ow#SKIP_ROM)
+    ow.write(core#CONV_TEMP)
+    repeat
+        temp := ow.rdbit{}
+    until (temp == 1)
+    ow.reset{}
+    ow.write(ow#SKIP_ROM)
+    ow.write(core#RD_SPAD)
+    temp := ow.read{}
+    temp |= ow.read{} << 8
+    ow.reset{}
+
+    temp := ~~temp * 5
+    case _temp_scale
+        F:
+            if temp > 0
+                temp := temp * 9 / 5 + 32_00
+            else
+                temp := 32_00 - (||(temp) * 9 / 5)
+        other:
+            return temp
+
+PUB TempScale(temp_scale): curr_scl
+' Set scale of temperature data returned by Temperature() method
 '   Valid values:
-'       SCALE_C (0): Celsius
-'       SCALE_F (1): Fahrenheit
+'       C (0): Celsius
+'       F (1): Fahrenheit
 '   Any other value returns the current setting
     case temp_scale
-        SCALE_F, SCALE_C:
+        F, C:
             _temp_scale := temp_scale
-        OTHER:
+        other:
             return _temp_scale
-
-PUB SN(buff_addr) | tmp
-' Read 64-bit serial number of device into buffer at buff_addr
-'   NOTE: Buffer at buff_addr must be 8 bytes in length
-    ow.Reset
-    ow.Write(ow#RD_ROM)
-    ow.Read                                 ' Discard first byte (family code)
-    repeat tmp from 7 to 0
-        byte[buff_addr][tmp] := ow.Read
- 
-PUB Status
-' Returns: One-Wire bus status
-    return ow.Reset
-
-PUB Temperature
-' Returns: Temperature in centi-degrees
-'   NOTE: Temperature scale is set using the Scale method, and defaults to Celsius
-    result := 0
-    ow.Reset
-    ow.Write(ow#SKIP_ROM)
-    ow.Write(core#CONV_TEMP)
-    repeat
-        result := ow.RdBit
-    until (result == 1)
-    ow.Reset
-    ow.Write(ow#SKIP_ROM)
-    ow.Write(core#RD_SPAD)
-    result := ow.Read
-    result |= ow.Read << 8
-    ow.Reset
-
-    result := ~~result * 5
-    case _temp_scale
-        SCALE_F:
-            if result > 0
-                result := result * 9 / 5 + 32_00
-            else
-                result := 32_00 - (||result * 9 / 5)
-        OTHER:
-            return result
 
 DAT
 {
