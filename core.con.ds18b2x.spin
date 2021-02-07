@@ -22,8 +22,11 @@ CON
     RD_EE       = $B8
     RD_SPAD     = $BE
 
+' Configuration (ADC res) bits
+    R0          = 5
+    R1          = 6
 
-PUB Null
+PUB Null{}
 ' This is not a top-level object
 
 DAT

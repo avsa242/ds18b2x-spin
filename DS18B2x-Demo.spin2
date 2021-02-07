@@ -12,12 +12,12 @@
 
 CON
 
-    _clkmode    = cfg#_clkmode
-    _xinfreq    = cfg#_xinfreq
+    _clkfreq    = cfg._clkfreq_def
+    _xtlfreq    = cfg._xtlfreq
 
 ' -- User-modifiable constants
-    LED         = cfg#LED1
-    SER_BAUD    = 115_200
+    LED         = cfg.LED1
+    SER_BAUD    = 2_000_000
 
     OW_PIN      = 2
     SCALE       = C
@@ -31,7 +31,7 @@ CON
 
 OBJ
 
-    cfg : "core.con.boardcfg.flip"
+    cfg : "core.con.boardcfg.p2eval"
     time: "time"
     ds  : "sensor.temperature.ds18b2x.ow"
     ser : "com.serial.terminal.ansi"
@@ -41,12 +41,12 @@ VAR
 
     long _devs[NR_DEVICES * 2]
 
-PUB Main{} | temp, i, nr_found
+PUB Main() | temp, i, nr_found
 
-    setup{}
+    setup()
 
     ds.tempscale(SCALE)                         ' set temperature scale
-    ds.opmode(ds#MULTI)                         ' ONE (1 sensor), MULTI
+    ds.opmode(ds.MULTI)                         ' ONE (1 sensor), MULTI
 
     nr_found := ds.search(@_devs, 2)            ' how many sensors found?
 
@@ -63,10 +63,10 @@ PUB Main{} | temp, i, nr_found
         i := 0
         repeat nr_found                         ' for each sensor,
             ds.select(@_devs[i])                '   address it
-            temp := ds.temperature{}            '   read its temperature
-            ser.printf3(string("(%d) %x%x: "), i/2, _devs[i+1], _devs[i])
+            temp := ds.temperature()            '   read its temperature
+            ser.printf("(%d) %x%x: ", i/2, _devs[i+1], _devs[i])
             decimal(temp, 100)
-            ser.newline{}
+            ser.newline()
             i += 2
 
 PRI Decimal(scaled, divisor) | whole[4], part[4], places, tmp, sign
@@ -87,26 +87,26 @@ PRI Decimal(scaled, divisor) | whole[4], part[4], places, tmp, sign
         places++
     until tmp == 1
     scaled //= divisor
-    part := int.deczeroed(||(scaled), places)
+    part := int.deczeroed(abs(scaled), places)
 
     ser.char(sign)
-    ser.dec(||(whole))
+    ser.dec(abs(whole))
     ser.char(".")
     ser.str(part)
 
-PUB Setup{}
+PUB Setup()
 
     ser.start(SER_BAUD)
-    time.msleep(30)
-    ser.clear{}
+    waitms(30)
+    ser.clear()
     ser.strln(string("Serial terminal started"))
     if ds.startx(OW_PIN)
         ser.strln(string("DS18B2x driver started"))
     else
         ser.strln(string("DS18B2x driver failed to start - halting"))
-        ds.stop{}
-        time.msleep(500)
-        ser.stop{}
+        ds.stop()
+        waitms(500)
+        
         repeat
 
 DAT
