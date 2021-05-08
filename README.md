@@ -31,7 +31,6 @@ P2/SPIN2:
 
 ## Limitations
 
-* Doesn't perform CRC checks on data received
 * Doesn't support alarms
 
 ## TODO
