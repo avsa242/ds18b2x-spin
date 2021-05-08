@@ -36,7 +36,7 @@ P2/SPIN2:
 
 ## TODO
 
-- [ ] Implement CRC checking
+- [x] Implement CRC checking
 - [x] Implement resolution setting
 - [ ] Implement alarms
 - [x] Test multiple devices on bus
