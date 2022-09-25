@@ -1,6 +1,6 @@
 {
     --------------------------------------------
-    Filename: sensor.temperature.ds18b2x.ow.spin
+    Filename: sensor.temperature.ds18b2x.spin
     Author: Jesse Burt
     Description: Driver for the Dallas/Maxim DS18B2x-series temperature sensors
     Copyright (c) 2022
@@ -38,7 +38,7 @@ PUB null{}
 ' This is not a top-level object
 
 PUB startx(DQ_PIN): status
-
+' Start the driver using custom I/O settings
     if lookdown(DQ_PIN: 0..31)
         if (status := ow.init(DQ_PIN))
             return
@@ -55,29 +55,29 @@ PUB stop{}
 
 PUB defaults{}
 ' Factory default settings
-    adcres(12)
-    tempscale(C)
+    adc_res(12)
+    temp_scale(C)
 
-PUB adcres(bits): curr_res
+PUB adc_res(bits): curr_res
 ' Set resolution of temperature readings, in bits
 '   Valid values: 9..12
 '   Any other value polls the chip and returns the current setting
     case bits
         9..12:
             bits := lookdownz(bits: 9..12) << core#R0
-            polldev{}
+            poll_dev{}
             ow.wr_byte(core#WR_SPAD)
             ow.wr_word($0000)                   ' skip over Th, Tl regs
             ow.wr_byte(bits)
             ow.reset{}
         other:
-            polldev{}
+            poll_dev{}
             ow.wr_byte(core#RD_SPAD)
             ow.rd_long{}                        ' skip over temperature, Th, Tl
             curr_res := (ow.rd_byte{} >> core#R0)
             return lookupz(curr_res: 9..12)
 
-PUB lastcrcvalid{}: wasvalid
+PUB last_crc_valid{}: wasvalid
 ' Flag indicating CRC of last data read from sensor was valid
 '   Returns: TRUE (-1) or FALSE (0)
 '   NOTE: CRC is calculated from entire DS18B20 scratchpad RAM
@@ -104,7 +104,7 @@ PUB select(ptr_addr)
 ' Select device, by pointer to address, for subsequent operations
     longmove(@_sel_addr, ptr_addr, 2)
 
-PUB sn(ptr_buff): isvalid
+PUB serial_num(ptr_buff): isvalid
 ' Read 64-bit serial number of device into buffer at ptr_buff
 '   NOTE: Buffer at ptr_buff must be 8 bytes in length
 '   NOTE: Includes family code (LSB) and CRC (MSB)
@@ -114,15 +114,15 @@ PUB sn(ptr_buff): isvalid
     ow.readaddress(ptr_buff)
     return (crc.dallasmaximcrc8(ptr_buff, 7) == byte[ptr_buff][SN_MSB])
 
-PUB tempdata{}: temp_adc | tmp[3], i
+PUB temp_data{}: temp_adc | tmp[3], i
 ' Read temperature data
     temp_adc := 0
-    polldev{}
+    poll_dev{}
 
     ow.wr_byte(core#CONV_TEMP)
     repeat until ow.rd_bits(1)                  ' wait until measurement ready
 
-    polldev{}
+    poll_dev{}
 
     ow.wr_byte(core#RD_SPAD)
     repeat i from 0 to 8
@@ -132,7 +132,7 @@ PUB tempdata{}: temp_adc | tmp[3], i
     _lastcrc_valid := (crc.dallasmaximcrc8(@tmp, 8) == tmp.byte[SPAD_MSB])
     ow.reset{}
 
-PUB tempword2deg(temp_word): temp
+PUB temp_word2deg(temp_word): temp
 ' Convert temperature ADC word to temperature
 '   Returns: temperature, in hundredths of a degree, in chosen scale
     temp := ~~temp_word * 5
@@ -144,7 +144,7 @@ PUB tempword2deg(temp_word): temp
         other:
             return temp
 
-PRI polldev{}
+PRI poll_dev{}
 ' Poll a device
     ow.reset{}
     case _opmode

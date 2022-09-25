@@ -5,7 +5,7 @@
     Description: Demo of the DS18B2x driver
     Copyright (c) 2022
     Started Jul 13, 2019
-    Updated Aug 15, 2022
+    Updated Sep 25, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -43,7 +43,7 @@ VAR
 PUB main{} | temp, i, nr_found, tscl
 
     setup{}
-    ds.tempscale(SCALE)                         ' set temperature scale
+    ds.temp_scale(SCALE)                        ' set temperature scale
     ds.opmode(ds#MULTI)                         ' ONE (1 sensor), MULTI
 
     nr_found := ds.search(@_devs, 2)            ' how many sensors found?
@@ -51,7 +51,7 @@ PUB main{} | temp, i, nr_found, tscl
     i := 0
     repeat nr_found                             ' for each sensor,
         ds.select(@_devs[i])                    '   address it and set its
-        ds.adcres(BITS)                         '   ADC resolution (9..12 bits)
+        ds.adc_res(BITS)                        '   ADC resolution (9..12 bits)
         i += 2
 
     repeat
@@ -63,7 +63,7 @@ PUB main{} | temp, i, nr_found, tscl
             ds.select(@_devs[i])                '   address it
             temp := ds.temperature{}            '   read its temperature
             ser.printf3(string("(%d) %x%x: "), i/2, _devs[i+1], _devs[i])
-            tscl := lookupz(ds.tempscale(-2): "C", "F", "K")
+            tscl := lookupz(ds.temp_scale(-2): "C", "F", "K")
             ser.printf3(string("Temp. (deg %c): %3.3d.%02.2d\n\r"), tscl, (temp / 100), ||(temp // 100))
             i += 2
 
