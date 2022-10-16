@@ -5,7 +5,7 @@
     Description: Driver for the Dallas/Maxim DS18B2x-series temperature sensors
     Copyright (c) 2022
     Started Jul 13, 2019
-    Updated Sep 20, 2022
+    Updated Oct 16, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -111,8 +111,8 @@ PUB serial_num(ptr_buff): isvalid
 '   Returns: Flag indicating whether CRC is valid
     ow.reset{}
     ow.wr_byte(ow#RD_ROM)
-    ow.readaddress(ptr_buff)
-    return (crc.dallasmaximcrc8(ptr_buff, 7) == byte[ptr_buff][SN_MSB])
+    ow.rd_addr(ptr_buff)
+    return (crc.dallas_maxim_crc8(ptr_buff, 7) == byte[ptr_buff][SN_MSB])
 
 PUB temp_data{}: temp_adc | tmp[3], i
 ' Read temperature data
@@ -129,7 +129,7 @@ PUB temp_data{}: temp_adc | tmp[3], i
         tmp.byte[i] := ow.rd_byte{}
 
     temp_adc := tmp.word[0]
-    _lastcrc_valid := (crc.dallasmaximcrc8(@tmp, 8) == tmp.byte[SPAD_MSB])
+    _lastcrc_valid := (crc.dallas_maxim_crc8(@tmp, 8) == tmp.byte[SPAD_MSB])
     ow.reset{}
 
 PUB temp_word2deg(temp_word): temp
@@ -152,7 +152,7 @@ PRI poll_dev{}
             ow.wr_byte(ow#SKIP_ROM)             '   responds
         MULTI:
             ow.wr_byte(ow#MATCH_ROM)            ' match a specific device
-            ow.writeaddress(@_sel_addr)
+            ow.wr_addr(@_sel_addr)
 
 DAT
 {
