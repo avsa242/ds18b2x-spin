@@ -4,8 +4,8 @@
     Description:    Driver for the Dallas/Maxim DS18B2x-series temperature sensors
     Author:         Jesse Burt
     Started:        Feb 7, 2021
-    Updated:        Oct 19, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Jan 11, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
@@ -162,7 +162,7 @@ PUB temp_data(): d | tmp[3], i
 PUB temp_word2deg(temp_word): t
 ' Convert temperature ADC word to temperature
 '   Returns: temperature, in hundredths of a degree, in chosen scale
-    t := (temp_word signx 15) * 5
+    t := ((temp_word signx 15) * 6_25) / 100
     case _temp_scale
         C:
             return t
@@ -185,7 +185,7 @@ PRI poll_dev()
 
 DAT
 {
-Copyright 2024 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
