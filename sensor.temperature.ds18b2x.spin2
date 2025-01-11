@@ -36,7 +36,9 @@ OBJ
 VAR
 
     long _sel_addr[2], _lastcrc_valid
+    long _int_thresh
     byte _opmode
+    byte _adcres
 
 
 PUB null()
@@ -75,6 +77,42 @@ PUB defaults()
     temp_adc_res(12)
     temp_scale(C)
 
+
+PUB int_lo_thresh(): t
+' Get currently set interrupt high threshold
+'   Returns: threshold in hundredths of a degree
+    read_scratchpad()
+    return (_int_thresh.byte[1] * 100)
+
+
+PUB int_hi_thresh(): t
+' Get currently set interrupt low threshold
+'   Returns: threshold in hundredths of a degree
+    read_scratchpad()
+    return (_int_thresh.byte[0] * 100)
+
+
+PUB int_set_hi_thresh(t)
+' Set interrupt high threshold
+'   t: threshold in hundredths of a degree C (-128_00..127_00)
+    _int_thresh.byte[0] := t/100
+    write_scratchpad()
+
+
+PUB int_set_lo_thresh(t)
+' Set interrupt low threshold
+'   t: threshold in hundredths of a degree C (-128_00..127_00)
+    _int_thresh.byte[1] := t/100
+    write_scratchpad()
+
+
+PUB interrupt(): i | tmp[2]
+' Flag indicating a temperature threshold interrupt (alarm)
+    poll_dev()
+    tmp[0] := tmp[1] := 0
+    ow.search(ow.CHECK_CRC | ow.ALARM_DEVS, 1, @tmp)
+    if tmp[0] or tmp[1]
+        return true
 
 PUB last_crc_valid(): v
 ' Flag indicating CRC of last data read from sensor was valid
@@ -125,18 +163,11 @@ PUB temp_adc_res(bits): c
 '   Any other value polls the chip and returns the current setting
     case bits
         9..12:
-            bits := lookdownz(bits: 9..12) << core.R0
-            poll_dev()
-            ow.wr_byte(core.WR_SPAD)
-            ow.wr_word($0000)                   ' skip over Th, Tl regs
-            ow.wr_byte(bits)
-            ow.reset()
+            _adcres := lookdownz(bits: 9..12) << core#R0
+            write_scratchpad()
         other:
-            poll_dev()
-            ow.wr_byte(core.RD_SPAD)
-            ow.rd_long()                        ' skip over temperature, Th, Tl
-            c := (ow.rd_byte() >> core.R0)
-            return lookupz(c: 9..12)
+            read_scratchpad()
+            return lookupz(_adcres: 9..12)
 
 
 PUB temp_data(): d | tmp[3], i
@@ -162,7 +193,7 @@ PUB temp_data(): d | tmp[3], i
 PUB temp_word2deg(temp_word): t
 ' Convert temperature ADC word to temperature
 '   Returns: temperature, in hundredths of a degree, in chosen scale
-    t := (temp_word signx 15) * 5
+    t := ((temp_word signx 15) * 6_25) / 100
     case _temp_scale
         C:
             return t
@@ -181,6 +212,24 @@ PRI poll_dev()
         MULTI:
             ow.wr_byte(ow.MATCH_ROM)            ' match a specific device
             ow.wr_addr(@_sel_addr)
+
+
+PRI read_scratchpad()
+' Read scratchpad RAM into hub RAM
+    poll_dev()
+    ow.wr_byte(core#RD_SPAD)
+    ow.rd_word()                                ' skip over temperature
+    _int_thresh := ow.rd_word()                 ' read Th (LSB), then Tl (MSB)
+    _adcres := (ow.rd_byte() >> core#R0)        ' read ADC resolution
+
+
+PRI write_scratchpad()
+' Write hub RAM to scratchpad RAM
+    poll_dev()
+    ow.wr_byte(core#WR_SPAD)
+    ow.wr_word(_int_thresh)                     ' update the interrupt thresholds (Th, Tl)
+    ow.wr_byte(_adcres)                         ' update the ADC resolution
+    ow.reset()
 
 
 DAT

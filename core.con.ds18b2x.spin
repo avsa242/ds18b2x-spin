@@ -14,6 +14,9 @@ CON
     FAMILY_20   = $28
     FAMILY_22   = $22
 
+    T_WR        = 10_000
+
+
     CONV_TEMP   = $44
     COPY_SPAD   = $48
     WR_SPAD     = $4E
